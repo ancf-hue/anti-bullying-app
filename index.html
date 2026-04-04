@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Анти-ИИ Буллинг | Защита от травли</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: system-ui, -apple-system, 'SF Pro Display', 'Inter', sans-serif;
+            background: linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 0; position: relative;
+        }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 30% 50%, rgba(59,130,246,0.15) 0%, transparent 60%);
+            pointer-events: none; animation: bgPulse 6s ease-in-out infinite;
+        }
+        @keyframes bgPulse { 0%,100% { opacity:0.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.05); } }
+        .app-container { width:100%; max-width:400px; aspect-ratio:9/16; display:flex; flex-direction:column; position:relative; z-index:2; margin:0 auto; }
+        .chat-card {
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 48px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+            flex: 1; display: flex; flex-direction: column;
+        }
+        .chat-header {
+            background: rgba(16,185,129,0.2); backdrop-filter: blur(10px);
+            padding: 20px 16px 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .chat-header h1 {
+            font-size: 1.8rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+            gap: 10px; color: #ffffff; text-shadow: 0 2px 5px rgba(0,0,0,0.2); letter-spacing: -0.5px;
+        }
+        .chat-header img {
+            width: 42px; height: 42px; border-radius: 14px; object-fit: cover;
+            background: #ffffff; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .chat-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+        .message-bot {
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+            padding: 14px 16px; border-radius: 24px; border-bottom-left-radius: 8px;
+            color: #ffffff; font-size: 0.9rem; line-height: 1.45; white-space: pre-line;
+            animation: slideInUp 0.3s cubic-bezier(0.2,0.9,0.4,1.1); border: 1px solid rgba(255,255,255,0.1);
+        }
+        @keyframes slideInUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+        
+        .ai-chat-container { display: flex; flex-direction: column; height: 100%; }
+        .ai-chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; max-height: 400px; }
+        .ai-message { padding: 12px 14px; border-radius: 18px; font-size: 0.85rem; line-height: 1.4; max-width: 85%; }
+        .ai-message.bot { background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4); color: #a5f3fc; align-self: flex-start; border-bottom-left-radius: 6px; }
+        .ai-message.user { background: rgba(16,185,129,0.25); border: 1px solid rgba(16,185,129,0.5); color: #d1fae5; align-self: flex-end; border-bottom-right-radius: 6px; }
+        .ai-input-area { display: flex; gap: 8px; margin-top: 8px; }
+        .ai-input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 40px; padding: 12px 16px; color: #fff; font-size: 0.9rem; }
+        .ai-input:focus { outline: none; border-color: #3b82f6; }
+        .ai-input::placeholder { color: rgba(255,255,255,0.4); }
+        .ai-send-btn { background: #3b82f6; border: none; border-radius: 40px; padding: 12px 20px; color: white; font-weight: 600; cursor: pointer; }
+        .ai-send-btn:active { transform: scale(0.96); background: #2563eb; }
+        .ai-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .ai-suggestion { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 0.75rem; color: #fff; cursor: pointer; }
+        .ai-suggestion:active { background: rgba(59,130,246,0.4); }
+        
+        .main-menu-buttons { display: flex; flex-direction: column; gap: 14px; }
+        .main-menu-btn {
+            background: rgba(255,255,255,0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 100px; padding: 20px 16px; text-align: center; font-size: 1.3rem; font-weight: 700;
+            color: #ffffff; cursor: pointer; width: 100%; transition: all 0.2s;
+        }
+        .main-menu-btn:active { transform: scale(0.97); background: rgba(16,185,129,0.4); }
+        .danger-main-btn {
+            background: rgba(239,68,68,0.3); backdrop-filter: blur(10px); border: 1px solid rgba(239,68,68,0.6);
+            border-radius: 100px; padding: 20px 16px; text-align: center; font-size: 1.3rem; font-weight: 800;
+            color: #ffaaaa; cursor: pointer; width: 100%; transition: all 0.2s;
+        }
+        .danger-main-btn:active { transform: scale(0.97); background: rgba(239,68,68,0.6); }
+        .ai-menu-btn, .parents-main-btn {
+            background: rgba(139,92,246,0.2); backdrop-filter: blur(10px); border: 1px solid rgba(139,92,246,0.4);
+            border-radius: 100px; padding: 18px 16px; text-align: center; font-size: 1.2rem; font-weight: 700;
+            cursor: pointer; width: 100%; transition: all 0.2s;
+        }
+        .ai-menu-btn { color: #c4b5fd; }
+        .parents-main-btn { background: rgba(59,130,246,0.3); border: 1px solid rgba(59,130,246,0.6); color: #a5f3fc; }
+        .ai-menu-btn:active, .parents-main-btn:active { transform: scale(0.97); background: rgba(139,92,246,0.4); }
+        
+        .emergency-buttons { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; animation: slideInUp 0.3s ease; }
+        .emergency-btn {
+            background: rgba(239,68,68,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(239,68,68,0.5);
+            border-radius: 80px; padding: 16px 16px; font-weight: 700; font-size: 1rem; cursor: pointer;
+            color: #ffaaaa; text-align: center;
+        }
+        .emergency-btn:active { transform: scale(0.96); background: rgba(239,68,68,0.5); }
+        .back-to-menu {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 60px; padding: 12px 16px; font-size: 0.9rem; color: rgba(255,255,255,0.7);
+            cursor: pointer; width: 100%; text-align: center; margin-top: 8px;
+        }
+        .back-to-menu:active { background: rgba(59,130,246,0.3); transform: scale(0.97); }
+        
+        .option-btn {
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 80px; padding: 16px 18px; text-align: center; font-size: 1.1rem; font-weight: 600;
+            color: #ffffff; cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s;
+        }
+        .option-btn:active { transform: scale(0.97); background: rgba(16,185,129,0.3); }
+        .free-text {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 24px; padding: 14px 16px; font-size: 0.95rem; font-family: inherit;
+            min-height: 90px; width: 100%; margin-bottom: 10px; color: #ffffff;
+        }
+        .free-text:focus { outline: none; border-color: #3b82f6; }
+        .free-text::placeholder { color: rgba(255,255,255,0.4); }
+        .action-btn {
+            background: #10b981; color: white; border: none; border-radius: 60px;
+            padding: 14px 24px; font-weight: 600; font-size: 1rem; cursor: pointer;
+        }
+        .action-btn:active { transform: scale(0.96); background: #059669; }
+        .video-container {
+            margin: 8px 0; border-radius: 20px; background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px); padding: 16px; text-align: center;
+        }
+        .footer-note { text-align: center; font-size: 0.6rem; color: rgba(255,255,255,0.4); padding: 8px 16px 12px; }
+        .support-card {
+            background: rgba(59,130,246,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 24px; padding: 16px; margin-top: 12px; text-align: center;
+        }
+        .support-card p { color: #a5f3fc; font-size: 0.8rem; margin-bottom: 12px; }
+        .donate-btn {
+            background: #3b82f6; border: none; border-radius: 60px; padding: 14px 20px;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer; color: white; width: 100%;
+        }
+        .donate-btn:active { transform: scale(0.96); background: #2563eb; }
+        .chat-body::-webkit-scrollbar { width: 4px; }
+        .chat-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .chat-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .chat-header { padding-top: max(20px, env(safe-area-inset-top)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="chat-card">
+            <div class="chat-header">
+                <h1>
+                    <img src="logo.jpeg" alt="K" onerror="this.style.display='none'">
+                    Анти-ИИ Буллинг
+                </h1>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div id="optionsContainer"></div>
+                <div class="footer-note">
+                    ✨ Анонимно · Оффлайн · Твои данные только у тебя
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function haptic(style = 'light') {
+            if (navigator.vibrate) navigator.vibrate(style === 'heavy' ? 100 : 30);
+        }
+
+        let audioCtx = null;
+        function playTone(freq, dur, vol = 0.1) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine'; osc.frequency.value = freq;
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(now + dur);
+            } catch(e) {}
+        }
+        
+        function showBreathing() {
+            const container = document.getElementById('optionsContainer');
+            const existing = container.querySelector('.video-container');
+            if (existing) existing.remove();
+            const div = document.createElement('div');
+            div.className = 'video-container';
+            div.innerHTML = `<div style="font-size:48px">🌊</div><div id="breathText" style="font-size:20px;font-weight:600;margin:10px;color:#a7f3d0">Вдох...</div><div id="breathCount" style="font-size:32px;font-weight:700;margin:5px;color:#10b981">3</div><button class="action-btn" style="margin-top:8px" onclick="this.parentElement.remove()">✖ Закрыть</button>`;
+            container.prepend(div);
+            let count = 3;
+            const textEl = div.querySelector('#breathText'), countEl = div.querySelector('#breathCount');
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) { textEl.innerText = count % 2 === 0 ? 'Вдох...' : 'Выдох...'; countEl.innerText = count; }
+                else { clearInterval(interval); textEl.innerText = '✨ Дыши спокойно'; countEl.innerText = '❤️'; playTone(523, 0.8); }
+            }, 1200);
+        }
+
+        // ========== ИИ-ПОМОЩНИК (УЛУЧШЕННЫЙ) ==========
+        
+        // База ответов — расширенная
+        const aiResponses = {
+            // Приветствия
+            'привет': 'Привет! 👋 Я здесь, чтобы помочь. Что тебя беспокоит?',
+            'здравствуй': 'Здравствуй! 👋 Расскажи, что случилось, я постараюсь помочь.',
+            
+            // БУЛЛИНГ ОБЩИЙ
+            'что такое буллинг': 'Буллинг — это когда кто-то специально и регулярно обижает, унижает или игнорирует другого человека. Это НЕ твоя вина. Ты заслуживаешь уважения и безопасности. ❤️',
+            'меня обижают': 'Мне очень жаль, что ты через это проходишь. Это не твоя вина. 🫂 Ты можешь: 1) Сохранить скриншоты 2) Рассказать взрослому 3) Позвонить 8-800-2000-122',
+            'я боюсь': 'Бояться — это нормально. 🫂 Ты уже сделал важный шаг — попросил помощи. Давай подумаем, кому ты можешь довериться?',
+            
+            // УЧИТЕЛЬ (важно!)
+            'учитель кричит': 'Если учитель кричит или ругает — это неприятно и может быть страшно. 🫂 Ты имеешь право на уважение. Попробуй: 1) Не отвечать грубостью 2) Спокойно сказать «Пожалуйста, не кричите» 3) Обсудить это с родителями или завучем позже.',
+            'учитель ругает': 'Если учитель ругает незаслуженно — это обидно. 🫂 Постарайся не принимать близко к сердцу. Если это происходит постоянно — это проблема. Расскажи родителям или школьному психологу.',
+            'кричат': 'Когда на тебя кричат — это неприятно. Ты не обязан это терпеть. Расскажи кому-то из взрослых, кому доверяешь (родители, другой учитель, психолог).',
+            'как сказать учителю': 'Скажи спокойно и чётко: «Меня обижают, мне нужна помощь». 🫶 Можно написать записку, если страшно говорить. Учитель обязан отреагировать.',
+            'учитель не помогает': 'Если учитель не реагирует — расскажи другому учителю, завучу, директору или школьному психологу. Можно позвонить родителям или на 8-800-2000-122.',
+            'боюсь сказать учителю': 'Бояться — нормально. 🫂 Попробуй: 1) Написать записку и положить на стол 2) Попросить друга передать 3) Поговорить после урока. Ты имеешь право на защиту.',
+            
+            // КИБЕРБУЛЛИНГ
+            'кибербуллинг': 'Кибербуллинг — это травля в интернете. Сохраняй скриншоты, не отвечай агрессору, расскажи взрослому. Ты не один. 💙',
+            'оскорбления в интернете': 'Оскорбления в сети — это кибербуллинг. 📱 Не отвечай (это «топливо»), сделай скриншоты, заблокируй агрессора, расскажи родителям.',
+            'злые комментарии': 'Злые комментарии — это форма кибербуллинга. 💔 Ты не обязан их читать. Скрой комментарии, сделай скрин, расскажи взрослому.',
+            
+            // ПРАВА И ЗАКОН
+            'мои права': 'Ты имеешь право на безопасность, уважение и защиту от буллинга. За травлю предусмотрена ответственность по закону (ст. 5.61 КоАП, ст. 110.1 УК РФ).',
+            'закон': 'По закону оскорбления, угрозы и травля — это правонарушения. 📜 Ты имеешь право на защиту. Обратись к родителям, в школу или на 8-800-2000-122.',
+            'полиция': 'В полицию можно обращаться, если есть угрозы или насилие. 🚨 Позвони 112 или попроси родителей помочь с заявлением.',
+            
+            // ТЕЛЕФОНЫ ПОМОЩИ
+            'телефон': '📞 Детский телефон доверия: 8-800-2000-122 (круглосуточно, анонимно, бесплатно). 🚨 112 — угроза жизни. ⚠️ 123 — прокуратура.',
+            'куда позвонить': '📞 8-800-2000-122 — детский телефон доверия. 🚨 112 — если есть угроза жизни. ⚠️ 123 — прокуратура. Все звонки бесплатные.',
+            'психолог': 'Позвони на детский телефон доверия: 8-800-2000-122. Там работают психологи. Это бесплатно, анонимно и конфиденциально. 💙',
+            
+            // ДРУГОЕ
+            'спасибо': 'Всегда рад помочь! 💙 Ты не один. Если нужно — я здесь.',
+            'помоги': 'Конечно! Расскажи подробнее, что случилось. Я постараюсь помочь советом.',
+            'не знаю что делать': 'Это нормально — растеряться. 🫶 Давай по шагам: 1) Ты в безопасности сейчас? 2) Есть ли взрослый, которому ты доверяешь? 3) Хочешь, я помогу составить сообщение?',
+        };
+        
+        // Ключевые слова для поиска (приоритетные)
+        const aiKeywords = [
+            // Учитель (самый приоритет)
+            { keywords: ['учитель кричит', 'учитель ругает', 'кричит учитель', 'ругает учитель'], response: 'учитель кричит' },
+            { keywords: ['кричат', 'орут', 'накричали', 'крик', 'орёт'], response: 'кричат' },
+            { keywords: ['учитель', 'педагог', 'преподаватель', 'классный'], response: 'учитель не помогает' },
+            { keywords: ['сказать учителю', 'поговорить с учителем'], response: 'как сказать учителю' },
+            
+            // Кибербуллинг
+            { keywords: ['кибербуллинг', 'интернет', 'чат', 'комментарии', 'фото', 'фейк', 'тролль', 'онлайн'], response: 'кибербуллинг' },
+            { keywords: ['оскорбления', 'оскорбляют'], response: 'оскорбления в интернете' },
+            { keywords: ['злые комментарии', 'негатив', 'пишут гадости'], response: 'злые комментарии' },
+            
+            // Права
+            { keywords: ['права', 'закон', 'полиция', 'жалоба', 'заявление'], response: 'мои права' },
+            
+            // Телефоны
+            { keywords: ['телефон', 'позвонить', 'номер', 'звонок'], response: 'телефон' },
+            { keywords: ['психолог', 'помощь психолога'], response: 'психолог' },
+            
+            // Буллинг общий
+            { keywords: ['буллинг', 'травля', 'обижают', 'издеваются', 'унижают'], response: 'что такое буллинг' },
+            { keywords: ['боюсь', 'страшно', 'тревожно', 'переживаю'], response: 'я боюсь' },
+        ];
+        
+        function findAIResponse(userText) {
+            const lowerText = userText.toLowerCase().trim();
+            
+            // 🔴 Приоритет 1: Экстренные слова
+            if (lowerText.includes('суицид') || lowerText.includes('умереть') || lowerText.includes('убью себя')) {
+                return '💙 Пожалуйста, позвони прямо сейчас: 8-800-2000-122 или 112. Твоя жизнь важна. Ты не один.';
+            }
+            
+            // 🟡 Приоритет 2: Точное совпадение с ключевыми словами
+            for (const item of aiKeywords) {
+                for (const kw of item.keywords) {
+                    if (lowerText.includes(kw)) {
+                        return aiResponses[item.response] || aiResponses['помоги'];
+                    }
+                }
+            }
+            
+            // 🟢 Приоритет 3: Прямое совпадение с ключом ответа
+            for (const key of Object.keys(aiResponses)) {
+                if (lowerText === key || lowerText.includes(key)) {
+                    return aiResponses[key];
+                }
+            }
+            
+            // ⚪ Приоритет 4: Универсальный ответ
+            return 'Я понимаю, что тебе непросто. 🫂 Попробуй описать ситуацию подробнее: что происходит? Кто тебя обижает? Или выбери тему из списка выше.';
+        }
+        
+        function showAIModule() {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = `
+                <div class="ai-chat-container">
+                    <div class="message-bot" style="margin-bottom:8px;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4)">
+                        🤖 <strong>Чем я могу помочь?</strong><br><br>
+                        Спроси меня о чём угодно про буллинг 👇
+                    </div>
+                    <div class="ai-chat-messages" id="aiMessages"></div>
+                    <div class="ai-suggestions">
+                        <div class="ai-suggestion" onclick="askAI('Что такое буллинг?')">📖 Что такое буллинг</div>
+                        <div class="ai-suggestion" onclick="askAI('Кибербуллинг')">💻 Кибербуллинг</div>
+                        <div class="ai-suggestion" onclick="askAI('Учитель кричит')">👩‍🏫 Учитель кричит</div>
+                        <div class="ai-suggestion" onclick="askAI('Мои права')">⚖️ Мои права</div>
+                        <div class="ai-suggestion" onclick="askAI('Телефоны помощи')">📞 Телефоны</div>
+                    </div>
+                    <div class="ai-input-area">
+                        <input type="text" class="ai-input" id="aiInput" placeholder="Напиши вопрос..." onkeypress="if(event.key==='Enter')sendAI()">
+                        <button class="ai-send-btn" onclick="sendAI()">➤</button>
+                    </div>
+                    <button class="back-to-menu" onclick="showMenu()" style="margin-top:12px">🏠 В главное меню</button>
+                </div>
+            `;
+            setTimeout(() => addAIMessage('bot', 'Привет! 👋 Чем я могу помочь?'), 100);
+            haptic('light');
+        }
+        
+        function addAIMessage(sender, text) {
+            const messagesDiv = document.getElementById('aiMessages');
+            if (!messagesDiv) return;
+            const msg = document.createElement('div');
+            msg.className = `ai-message ${sender}`;
+            msg.innerText = text;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function askAI(question) {
+            addAIMessage('user', question);
+            setTimeout(() => {
+                const answer = findAIResponse(question);
+                addAIMessage('bot', answer);
+            }, 300);
+        }
+        
+        function sendAI() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+            addAIMessage('user', text);
+            input.value = '';
+            setTimeout(() => {
+                const answer = findAIResponse(text);
+                addAIMessage('bot', answer);
+            }, 300);
+        }
+        
+        // ========== РОДИТЕЛЯМ ==========
+        function showParentsModule() {
+            document.getElementById('optionsContainer').innerHTML = `
+                <div class="message-bot" style="margin-bottom:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)">
+                    🌟 <strong>Дружный класс — лучшая защита от буллинга</strong><br><br>
+                    🎭 <strong>Общий интерес</strong><br>• Театральный кружок • Спортивная секция • Музыкальная группа<br><br>
+                    🌳 <strong>Общие дела</strong><br>• Походы, пикники • Субботники • Квесты на природе<br><br>
+                    ❤️ <strong>Общение родителей</strong><br>• Родительский чат • Совместные праздники • Встречи<br><br>
+                    🔑 <strong>Золотое правило</strong><br>Знать всех детей и родителей в классе.
+                </div>
+                <div class="support-card">
+                    <p>🤝 <strong>Поддержать проект</strong></p>
+                    <p style="font-size:0.7rem">Бесплатно навсегда.<br>Ваша помощь = развитие</p>
+                    <button class="donate-btn" onclick="showDonateInfo()">💝 Поддержать</button>
+                </div>
+                <button class="back-to-menu" onclick="showMenu()">🏠 В главное меню</button>
+            `;
+            haptic('light');
+        }
+        
+        function showDonateInfo() {
+            document.getElementById('optionsContainer').innerHTML = `
+                <div class="message-bot" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)">
+                    🔒 <strong>Безопасное пожертвование</strong><br><br>
+                    🔹 По номеру: <strong>8-920-227-56-76</strong><br>
+                    (Сбер, Тинькофф, ВТБ — без комиссии)<br><br>
+                    ✨ Спасибо за доверие!
+                </div>
+                <button class="action-btn" onclick="copyDonateNumber()">📋 Скопировать номер</button>
+                <button class="back-to-menu" onclick="showParentsModule()">🔙 Назад</button>
+            `;
+        }
+        
+        function copyDonateNumber() {
+            navigator.clipboard.writeText("8-920-227-56-76");
+            alert("📋 Номер скопирован!");
+            playTone(523, 0.5);
+        }
+        
+        // ========== ЭКСТРЕННЫЕ ТЕЛЕФОНЫ ==========
+        let emergencyVisible = false;
+        function toggleEmergency() {
+            const container = document.getElementById('optionsContainer');
+            const mainMenuDiv = container.querySelector('.main-menu-buttons');
+            if (!emergencyVisible) {
+                if (mainMenuDiv) mainMenuDiv.style.display = 'none';
+                const emergencyDiv = document.createElement('div');
+                emergencyDiv.className = 'emergency-buttons';
+                emergencyDiv.id = 'emergencyPanel';
+                emergencyDiv.innerHTML = `
+                    <button class="emergency-btn" onclick="window.location.href='tel:112'">🚨 112 — Экстренная помощь</button>
+                    <button class="emergency-btn" onclick="window.location.href='tel:123'">⚠️ 123 — Ребёнок в опасности</button>
+                    <button class="emergency-btn" onclick="window.location.href='tel:88002000122'">📞 8-800-2000-122 — Телефон доверия</button>
+                    <button class="back-to-menu" onclick="hideEmergency()">🏠 В главное меню</button>
+                `;
+                container.appendChild(emergencyDiv);
+                emergencyVisible = true;
+            }
+        }
+        
+        function hideEmergency() {
+            const container = document.getElementById('optionsContainer');
+            const emergencyPanel = document.getElementById('emergencyPanel');
+            const mainMenuDiv = container.querySelector('.main-menu-buttons');
+            if (emergencyPanel) emergencyPanel.remove();
+            if (mainMenuDiv) mainMenuDiv.style.display = 'flex';
+            emergencyVisible = false;
+        }
+        
+        // ========== МОДУЛИ ДЛЯ ДЕТЕЙ ==========
+        const modules = {
+            victim: {
+                start: "v1", nodes: {
+                    v1: { t: "Выбери, что происходит:", o: [{x:"🔴 Меня обижают сейчас",n:"v2"},{x:"😰 Мне страшно",n:"v2"},{x:"❓ Не знаю что делать",n:"v2"}] },
+                    v2: { t: "Ты сделал первый шаг! Давай подышим 🌬️", vid: true, o: [{x:"✅ Готов",n:"v3"},{x:"🔄 Повторить",n:"v2"}] },
+                    v3: { t: "Что происходит?", o: [{x:"👊 Бьют",n:"v4"},{x:"💬 Обзывают",n:"v5"},{x:"🚫 Игнорируют",n:"v6"}] },
+                    v4: { t: "1️⃣ Отойди\n2️⃣ Скриншот\n3️⃣ Не отвечай", vib: true, o: [{x:"📁 Сохранить",n:"v7"},{x:"⏭ Дальше",n:"v7"}] },
+                    v5: { t: "Это не твоя вина. Сохрани скрин.", vib: true, o: [{x:"📁 Сохранить",n:"v7"},{x:"⏭ Дальше",n:"v7"}] },
+                    v6: { t: "Игнорирование — тоже буллинг. Ты не один ❤️", o: [{x:"🧠 Почему",n:"v8"},{x:"💡 Что делать",n:"v9"}] },
+                    v7: { t: "Кому рассказать?", o: [{x:"👨‍👩 Родители",n:"v10"},{x:"👩‍🏫 Учитель",n:"v10"},{x:"😰 Боюсь",n:"v11"}] },
+                    v8: { t: "Буллинг — выбор агрессора. Ты в безопасности.", o: [{x:"💡 Дальше",n:"v9"}] },
+                    v9: { t: "3 шага: не отвечай → скрин → расскажи", o: [{x:"✍️ Сообщение",n:"v10"},{x:"✅ Запомнил",n:"v12"}] },
+                    v10: { t: "Скопируй текст:", o: [{x:"📱 «Мне нужна помощь»",n:"v12",act:"copy",p:"Мне нужна помощь. Со мной буллинг."},{x:"🔙 Назад",n:"v7"}] },
+                    v11: { t: "Бояться — нормально. Внизу телефон доверия.", o: [{x:"✍️ Помочь",n:"v10"}] },
+                    v12: { t: "✨ Ты сильный!\n🎯 Напиши одно действие:", o: [], input: "text" }
+                }
+            },
+            bystander: {
+                start: "b1", nodes: {
+                    b1: { t: "Выбери ситуацию:", o: [{x:"👀 Вижу буллинг",n:"b2"},{x:"👤 Друг страдает",n:"b3"},{x:"🤷 Не знаю как помочь",n:"b4"}] },
+                    b2: { t: "Что видишь?", o: [{x:"🔴 Сейчас",n:"b5"},{x:"💬 В чате",n:"b6"}] },
+                    b5: { t: "Твоя безопасность важна!\n🟢 Отвлеки 🟡 Поддержи 🔴 Позови взрослого", vib: true, o: [{x:"🟢 Отвлечь",n:"b7"},{x:"🟡 Поддержать",n:"b7"},{x:"🔴 Позвать",n:"b7"}] },
+                    b6: { t: "Напиши поддержку:", o: [{x:"✍️ Скопировать",n:"b8",act:"copy",p:"Я с тобой! Ты не один ❤️"},{x:"🔙 Назад",n:"b2"}] },
+                    b3: { t: "Скажи другу: «Я с тобой»", o: [{x:"✍️ Скопировать",n:"b8",act:"copy",p:"Я с тобой. Это не твоя вина."},{x:"🔙 Назад",n:"b1"}] },
+                    b4: { t: "Даже молчаливое присутствие помогает.", o: [{x:"🟢 Попробовать",n:"b5"},{x:"📞 Анонимно",n:"b9"}] },
+                    b9: { t: "Напиши записку учителю анонимно.", o: [{x:"🔙 Назад",n:"b4"}] },
+                    b7: { t: "Ты — активный свидетель! 🔥", o: [{x:"✅ Запомнил",n:"b8"}] },
+                    b8: { t: "🎯 Напиши одно действие:", o: [], input: "text" }
+                }
+            },
+            aggressor: {
+                start: "a1", nodes: {
+                    a1: { t: "Выбери:", o: [{x:"🤬 Я обижаю",n:"a2"},{x:"😤 Меня бесит",n:"a3"},{x:"😔 Сорвался",n:"a4"}] },
+                    a2: { t: "Что происходит?", o: [{x:"😡 Злюсь",n:"a3"},{x:"🔄 Меня обижают",n:"a5"}] },
+                    a3: { t: "Стоп-кран: сожми кулаки, вдохни.", vib: true, o: [{x:"🔄 Сделать",n:"a6"},{x:"⏭ Дальше",n:"a7"}] },
+                    a6: { t: "Дыши: вдох→задержка→выдох", o: [{x:"✅ Готово",n:"a7"}] },
+                    a5: { t: "Ты тоже можешь получить помощь. Внизу телефон.", o: [{x:"💡 Как остановиться",n:"a3"}] },
+                    a4: { t: "Жалеть — нормально.", o: [{x:"✍️ Извиниться",n:"a8",act:"copy",p:"Прости, я был не прав."},{x:"🛑 Не буду",n:"a9"}] },
+                    a7: { t: "Цифровой след остаётся. Остановись сейчас.", vib: true, o: [{x:"🛑 Хочу остановиться",n:"a9"},{x:"🤔 Помощь",n:"a10"}] },
+                    a10: { t: "📞 Внизу телефон психолога.", o: [{x:"🔙 Назад",n:"a7"}] },
+                    a9: { t: "Напиши слово-якорь (СТОП/ДЫШИ):", o: [], input: "text" },
+                    a8: { t: "Ты можешь измениться. 💪", o: [] }
+                }
+            }
+        };
+        
+        let currentMod = null, currentNode = null, currentData = null;
+        const optDiv = document.getElementById('optionsContainer');
+        
+        function showMenu() {
+            currentMod = null;
+            emergencyVisible = false;
+            const existingPanel = document.getElementById('emergencyPanel');
+            if (existingPanel) existingPanel.remove();
+            optDiv.innerHTML = `
+                <div class="main-menu-buttons">
+                    <button class="danger-main-btn" onclick="toggleEmergency()">🚨 Угроза жизни</button>
+                    <button class="main-menu-btn" onclick="startModule('victim')">😟 Меня обижают</button>
+                    <button class="main-menu-btn" onclick="startModule('bystander')">👀 Я вижу буллинг</button>
+                    <button class="main-menu-btn" onclick="startModule('aggressor')">😠 Я обижаю других</button>
+                    <button class="ai-menu-btn" onclick="showAIModule()">🤖 ИИ-помощник</button>
+                    <button class="parents-main-btn" onclick="showParentsModule()">👨‍👩‍👧‍👦 Родителям</button>
+                </div>
+            `;
+            haptic('light');
+        }
+        
+        function startModule(modName) {
+            currentMod = modName;
+            currentData = modules[modName];
+            currentNode = currentData.start;
+            renderNode();
+        }
+        
+        function renderNode() {
+            if (!currentData || !currentNode) return;
+            const node = currentData.nodes[currentNode];
+            if (!node) return;
+            if (node.vib) haptic('heavy');
+            if (node.vid) showBreathing();
+            optDiv.innerHTML = '';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message-bot';
+            msgDiv.innerText = node.t;
+            optDiv.appendChild(msgDiv);
+            if (node.input === 'text') {
+                const ta = document.createElement('textarea');
+                ta.placeholder = "Напиши здесь...";
+                ta.className = "free-text"; ta.rows = 3;
+                const btn = document.createElement('button');
+                btn.innerText = "✅ Сохранить";
+                btn.className = "action-btn";
+                btn.onclick = () => { if (ta.value.trim()) { alert("✨ Спасибо!"); showMenu(); } else alert("Напиши хотя бы одно действие ❤️"); };
+                optDiv.appendChild(ta); optDiv.appendChild(btn);
+                const menuBtn = document.createElement('button');
+                menuBtn.innerText = "🏠 В главное меню";
+                menuBtn.className = "back-to-menu";
+                menuBtn.onclick = () => showMenu();
+                optDiv.appendChild(menuBtn);
+                return;
+            }
+            if (node.o && node.o.length) {
+                node.o.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.innerText = opt.x; btn.className = "option-btn";
+                    btn.onclick = () => {
+                        if (opt.act === 'copy' && opt.p) { navigator.clipboard.writeText(opt.p); alert("📋 Текст скопирован!"); }
+                        if (opt.n) { currentNode = opt.n; renderNode(); } else { showMenu(); }
+                    };
+                    optDiv.appendChild(btn);
+                });
+                const menuBtn = document.createElement('button');
+                menuBtn.innerText = "🏠 В главное меню";
+                menuBtn.className = "back-to-menu";
+                menuBtn.onclick = () => showMenu();
+                optDiv.appendChild(menuBtn);
+            } else {
+                const menuBtn = document.createElement('button');
+                menuBtn.innerText = "🏠 В главное меню";
+                menuBtn.className = "action-btn";
+                menuBtn.onclick = () => showMenu();
+                optDiv.appendChild(menuBtn);
+            }
+        }
+        showMenu();
+    </script>
+</body>
+</html>
