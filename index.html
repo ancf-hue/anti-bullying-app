@@ -90,6 +90,12 @@
         .ai-menu-btn { color: #c4b5fd; }
         .parents-main-btn { background: rgba(59,130,246,0.3); border: 1px solid rgba(59,130,246,0.6); color: #a5f3fc; }
         .ai-menu-btn:active, .parents-main-btn:active { transform: scale(0.97); background: rgba(139,92,246,0.4); }
+        .support-main-btn {
+            background: rgba(234,179,8,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(234,179,8,0.5);
+            border-radius: 100px; padding: 18px 16px; text-align: center; font-size: 1.2rem; font-weight: 700;
+            cursor: pointer; width: 100%; transition: all 0.2s; color: #fde047;
+        }
+        .support-main-btn:active { transform: scale(0.97); background: rgba(234,179,8,0.4); }
         
         .emergency-buttons { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; animation: slideInUp 0.3s ease; }
         .emergency-btn {
@@ -138,6 +144,39 @@
             font-weight: 700; font-size: 0.95rem; cursor: pointer; color: white; width: 100%;
         }
         .donate-btn:active { transform: scale(0.96); background: #2563eb; }
+        
+        /* Стили для списка проектов */
+        .projects-list {
+            display: flex; flex-direction: column; gap: 12px; margin-top: 16px;
+        }
+        .project-item {
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+            border-radius: 20px; padding: 14px; text-decoration: none;
+            display: flex; align-items: center; gap: 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.2s;
+        }
+        .project-item:active { transform: scale(0.97); background: rgba(59,130,246,0.2); }
+        .project-icon { font-size: 32px; min-width: 48px; text-align: center; }
+        .project-info { flex: 1; }
+        .project-name { font-weight: 700; font-size: 0.9rem; color: #a5f3fc; margin-bottom: 4px; }
+        .project-desc { font-size: 0.7rem; color: rgba(255,255,255,0.6); }
+        .project-arrow { font-size: 18px; color: #60a5fa; }
+        .phone-number-block {
+            background: rgba(0,0,0,0.3); border-radius: 20px; padding: 12px;
+            text-align: center; margin: 12px 0;
+        }
+        .phone-number-block .big-number {
+            font-size: 24px; font-weight: 800; letter-spacing: 1px;
+            color: #fde047; margin: 8px 0;
+        }
+        .copy-phone-btn {
+            background: #3b82f6; border: none; border-radius: 40px;
+            padding: 8px 16px; color: white; font-size: 0.8rem;
+            cursor: pointer; margin-top: 6px;
+        }
+        .copy-phone-btn:active { transform: scale(0.96); }
+        
         .chat-body::-webkit-scrollbar { width: 4px; }
         .chat-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
         .chat-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -202,69 +241,45 @@
             }, 1200);
         }
 
-        // ========== ИИ-ПОМОЩНИК (УЛУЧШЕННЫЙ) ==========
+        // ========== ИИ-ПОМОЩНИК ==========
         
-        // База ответов — расширенная
         const aiResponses = {
-            // Приветствия
             'привет': 'Привет! 👋 Я здесь, чтобы помочь. Что тебя беспокоит?',
             'здравствуй': 'Здравствуй! 👋 Расскажи, что случилось, я постараюсь помочь.',
-            
-            // БУЛЛИНГ ОБЩИЙ
             'что такое буллинг': 'Буллинг — это когда кто-то специально и регулярно обижает, унижает или игнорирует другого человека. Это НЕ твоя вина. Ты заслуживаешь уважения и безопасности. ❤️',
             'меня обижают': 'Мне очень жаль, что ты через это проходишь. Это не твоя вина. 🫂 Ты можешь: 1) Сохранить скриншоты 2) Рассказать взрослому 3) Позвонить 8-800-2000-122',
             'я боюсь': 'Бояться — это нормально. 🫂 Ты уже сделал важный шаг — попросил помощи. Давай подумаем, кому ты можешь довериться?',
-            
-            // УЧИТЕЛЬ (важно!)
             'учитель кричит': 'Если учитель кричит или ругает — это неприятно и может быть страшно. 🫂 Ты имеешь право на уважение. Попробуй: 1) Не отвечать грубостью 2) Спокойно сказать «Пожалуйста, не кричите» 3) Обсудить это с родителями или завучем позже.',
             'учитель ругает': 'Если учитель ругает незаслуженно — это обидно. 🫂 Постарайся не принимать близко к сердцу. Если это происходит постоянно — это проблема. Расскажи родителям или школьному психологу.',
             'кричат': 'Когда на тебя кричат — это неприятно. Ты не обязан это терпеть. Расскажи кому-то из взрослых, кому доверяешь (родители, другой учитель, психолог).',
             'как сказать учителю': 'Скажи спокойно и чётко: «Меня обижают, мне нужна помощь». 🫶 Можно написать записку, если страшно говорить. Учитель обязан отреагировать.',
             'учитель не помогает': 'Если учитель не реагирует — расскажи другому учителю, завучу, директору или школьному психологу. Можно позвонить родителям или на 8-800-2000-122.',
             'боюсь сказать учителю': 'Бояться — нормально. 🫂 Попробуй: 1) Написать записку и положить на стол 2) Попросить друга передать 3) Поговорить после урока. Ты имеешь право на защиту.',
-            
-            // КИБЕРБУЛЛИНГ
             'кибербуллинг': 'Кибербуллинг — это травля в интернете. Сохраняй скриншоты, не отвечай агрессору, расскажи взрослому. Ты не один. 💙',
             'оскорбления в интернете': 'Оскорбления в сети — это кибербуллинг. 📱 Не отвечай (это «топливо»), сделай скриншоты, заблокируй агрессора, расскажи родителям.',
             'злые комментарии': 'Злые комментарии — это форма кибербуллинга. 💔 Ты не обязан их читать. Скрой комментарии, сделай скрин, расскажи взрослому.',
-            
-            // ПРАВА И ЗАКОН
             'мои права': 'Ты имеешь право на безопасность, уважение и защиту от буллинга. За травлю предусмотрена ответственность по закону (ст. 5.61 КоАП, ст. 110.1 УК РФ).',
             'закон': 'По закону оскорбления, угрозы и травля — это правонарушения. 📜 Ты имеешь право на защиту. Обратись к родителям, в школу или на 8-800-2000-122.',
             'полиция': 'В полицию можно обращаться, если есть угрозы или насилие. 🚨 Позвони 112 или попроси родителей помочь с заявлением.',
-            
-            // ТЕЛЕФОНЫ ПОМОЩИ
             'телефон': '📞 Детский телефон доверия: 8-800-2000-122 (круглосуточно, анонимно, бесплатно). 🚨 112 — угроза жизни. ⚠️ 123 — прокуратура.',
             'куда позвонить': '📞 8-800-2000-122 — детский телефон доверия. 🚨 112 — если есть угроза жизни. ⚠️ 123 — прокуратура. Все звонки бесплатные.',
             'психолог': 'Позвони на детский телефон доверия: 8-800-2000-122. Там работают психологи. Это бесплатно, анонимно и конфиденциально. 💙',
-            
-            // ДРУГОЕ
             'спасибо': 'Всегда рад помочь! 💙 Ты не один. Если нужно — я здесь.',
             'помоги': 'Конечно! Расскажи подробнее, что случилось. Я постараюсь помочь советом.',
             'не знаю что делать': 'Это нормально — растеряться. 🫶 Давай по шагам: 1) Ты в безопасности сейчас? 2) Есть ли взрослый, которому ты доверяешь? 3) Хочешь, я помогу составить сообщение?',
         };
         
-        // Ключевые слова для поиска (приоритетные)
         const aiKeywords = [
-            // Учитель (самый приоритет)
             { keywords: ['учитель кричит', 'учитель ругает', 'кричит учитель', 'ругает учитель'], response: 'учитель кричит' },
             { keywords: ['кричат', 'орут', 'накричали', 'крик', 'орёт'], response: 'кричат' },
             { keywords: ['учитель', 'педагог', 'преподаватель', 'классный'], response: 'учитель не помогает' },
             { keywords: ['сказать учителю', 'поговорить с учителем'], response: 'как сказать учителю' },
-            
-            // Кибербуллинг
             { keywords: ['кибербуллинг', 'интернет', 'чат', 'комментарии', 'фото', 'фейк', 'тролль', 'онлайн'], response: 'кибербуллинг' },
             { keywords: ['оскорбления', 'оскорбляют'], response: 'оскорбления в интернете' },
             { keywords: ['злые комментарии', 'негатив', 'пишут гадости'], response: 'злые комментарии' },
-            
-            // Права
             { keywords: ['права', 'закон', 'полиция', 'жалоба', 'заявление'], response: 'мои права' },
-            
-            // Телефоны
             { keywords: ['телефон', 'позвонить', 'номер', 'звонок'], response: 'телефон' },
             { keywords: ['психолог', 'помощь психолога'], response: 'психолог' },
-            
-            // Буллинг общий
             { keywords: ['буллинг', 'травля', 'обижают', 'издеваются', 'унижают'], response: 'что такое буллинг' },
             { keywords: ['боюсь', 'страшно', 'тревожно', 'переживаю'], response: 'я боюсь' },
         ];
@@ -272,12 +287,10 @@
         function findAIResponse(userText) {
             const lowerText = userText.toLowerCase().trim();
             
-            // 🔴 Приоритет 1: Экстренные слова
             if (lowerText.includes('суицид') || lowerText.includes('умереть') || lowerText.includes('убью себя')) {
                 return '💙 Пожалуйста, позвони прямо сейчас: 8-800-2000-122 или 112. Твоя жизнь важна. Ты не один.';
             }
             
-            // 🟡 Приоритет 2: Точное совпадение с ключевыми словами
             for (const item of aiKeywords) {
                 for (const kw of item.keywords) {
                     if (lowerText.includes(kw)) {
@@ -286,14 +299,12 @@
                 }
             }
             
-            // 🟢 Приоритет 3: Прямое совпадение с ключом ответа
             for (const key of Object.keys(aiResponses)) {
                 if (lowerText === key || lowerText.includes(key)) {
                     return aiResponses[key];
                 }
             }
             
-            // ⚪ Приоритет 4: Универсальный ответ
             return 'Я понимаю, что тебе непросто. 🫂 Попробуй описать ситуацию подробнее: что происходит? Кто тебя обижает? Или выбери тему из списка выше.';
         }
         
@@ -364,32 +375,80 @@
                     ❤️ <strong>Общение родителей</strong><br>• Родительский чат • Совместные праздники • Встречи<br><br>
                     🔑 <strong>Золотое правило</strong><br>Знать всех детей и родителей в классе.
                 </div>
-                <div class="support-card">
-                    <p>🤝 <strong>Поддержать проект</strong></p>
-                    <p style="font-size:0.7rem">Бесплатно навсегда.<br>Ваша помощь = развитие</p>
-                    <button class="donate-btn" onclick="showDonateInfo()">💝 Поддержать</button>
-                </div>
                 <button class="back-to-menu" onclick="showMenu()">🏠 В главное меню</button>
             `;
             haptic('light');
         }
         
-        function showDonateInfo() {
+        // ========== ПОДДЕРЖАТЬ ПРОЕКТ (НОВЫЙ МОДУЛЬ) ==========
+        function showSupportModule() {
             document.getElementById('optionsContainer').innerHTML = `
-                <div class="message-bot" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)">
-                    🔒 <strong>Безопасное пожертвование</strong><br><br>
-                    🔹 По номеру: <strong>8-920-227-56-76</strong><br>
-                    (Сбер, Тинькофф, ВТБ — без комиссии)<br><br>
-                    ✨ Спасибо за доверие!
+                <div class="message-bot" style="background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.4);margin-bottom:8px">
+                    🤝 <strong>Поддержать проекты</strong><br><br>
+                    Наши приложения бесплатны навсегда. Если они помогают вам — можете поддержать разработку добровольным переводом.
                 </div>
-                <button class="action-btn" onclick="copyDonateNumber()">📋 Скопировать номер</button>
-                <button class="back-to-menu" onclick="showParentsModule()">🔙 Назад</button>
+                
+                <div class="phone-number-block">
+                    <div>📱 ПЕРЕВОД ПО НОМЕРУ ТЕЛЕФОНА:</div>
+                    <div class="big-number">8-920-227-56-76</div>
+                    <button class="copy-phone-btn" onclick="copyPhoneNumber()">📋 Копировать номер</button>
+                </div>
+                
+                <div class="projects-list">
+                    <a href="https://anti-ai-shield.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-item">
+                        <div class="project-icon">🛡️</div>
+                        <div class="project-info">
+                            <div class="project-name">Защита от телефонных мошенников</div>
+                            <div class="project-desc">Автоответчик, SOS-режим, ИИ-анализатор угроз</div>
+                        </div>
+                        <div class="project-arrow">➡️</div>
+                    </a>
+                    
+                    <a href="https://anti-ai-animals.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-item">
+                        <div class="project-icon">🐾</div>
+                        <div class="project-info">
+                            <div class="project-name">Анти ИИ: Животные поют</div>
+                            <div class="project-desc">Уникальные голоса животных в музыкальной обработке</div>
+                        </div>
+                        <div class="project-arrow">➡️</div>
+                    </a>
+                    
+                    <a href="https://anti-ai-stress.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-item">
+                        <div class="project-icon">🧘</div>
+                        <div class="project-info">
+                            <div class="project-name">Анти-ИИ Стресс</div>
+                            <div class="project-desc">Техники релаксации и борьбы со стрессом</div>
+                        </div>
+                        <div class="project-arrow">➡️</div>
+                    </a>
+                    
+                    <a href="https://anti-ai-barcode.vercel.app/" target="_blank" rel="noopener noreferrer" class="project-item">
+                        <div class="project-icon">📱</div>
+                        <div class="project-info">
+                            <div class="project-name">Анти ИИ Штрих-код</div>
+                            <div class="project-desc">Защита данных через QR и штрих-коды</div>
+                        </div>
+                        <div class="project-arrow">➡️</div>
+                    </a>
+                    
+                    <a href="https://rutube.ru/channel/24404224/" target="_blank" rel="noopener noreferrer" class="project-item">
+                        <div class="project-icon">✨</div>
+                        <div class="project-info">
+                            <div class="project-name">ВолшебствО</div>
+                            <div class="project-desc">Магический канал с удивительным контентом</div>
+                        </div>
+                        <div class="project-arrow">➡️</div>
+                    </a>
+                </div>
+                
+                <button class="back-to-menu" onclick="showMenu()">🏠 В главное меню</button>
             `;
+            haptic('light');
         }
         
-        function copyDonateNumber() {
-            navigator.clipboard.writeText("8-920-227-56-76");
-            alert("📋 Номер скопирован!");
+        function copyPhoneNumber() {
+            const phone = "8-920-227-56-76";
+            navigator.clipboard.writeText(phone).then(() => alert("📋 Номер скопирован!")).catch(() => alert("Не удалось скопировать"));
             playTone(523, 0.5);
         }
         
@@ -486,6 +545,7 @@
                     <button class="main-menu-btn" onclick="startModule('aggressor')">😠 Я обижаю других</button>
                     <button class="ai-menu-btn" onclick="showAIModule()">🤖 ИИ-помощник</button>
                     <button class="parents-main-btn" onclick="showParentsModule()">👨‍👩‍👧‍👦 Родителям</button>
+                    <button class="support-main-btn" onclick="showSupportModule()">💰 ПОДДЕРЖАТЬ ПРОЕКТ</button>
                 </div>
             `;
             haptic('light');
